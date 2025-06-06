@@ -1,0 +1,15 @@
+---
+no-hard-tabs:
+  spaces_per_tab: 2
+line-length:
+  code_blocks: false
+  line_length: 120
+ol-prefix:
+  style: ordered
+no-inline-html:
+  allowed_elements:
+    - b
+    - code
+    - details
+    - i
+    - summary

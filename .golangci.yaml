@@ -1,0 +1,91 @@
+---
+version: "2"
+
+run:
+  modules-download-mode: readonly
+
+formatters:
+  enable:
+    - gofumpt
+
+linters:
+  default: all
+  disable:
+    - depguard
+    - dupl
+    - exhaustruct
+    - forbidigo
+    - nonamedreturns
+    - varnamelen
+    - wrapcheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io/fs.File).Close
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - generic
+    mnd:
+      ignored-numbers: ["2", "3", "-1"]
+    predeclared:
+      ignore: ["new"]
+    revive:
+      rules:
+        - name: atomic
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+          exclude: ["TEST"]
+        - name: early-return
+          arguments:
+            - allow-jump: true
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: file-header
+          arguments:
+            - "Copyright 2025 Oliver Eikemeier. All Rights Reserved."
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+    testifylint:
+      enable-all: true
+      disable:
+        - require-error
+  exclusions:
+    rules:
+      - path: _test\.go$
+        linters:
+          - govet
+        text: "lostcancel"
+      - path: ^main\.go$
+        linters:
+          - gocheckcompilerdirectives
+        text: "go:debug"
+      - linters:
+          - govet
+        text: '^shadow: declaration of "(ctx|err|ok)" shadows declaration at line \d+$'
