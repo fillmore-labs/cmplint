@@ -66,23 +66,40 @@ func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
 	switch path {
 	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors":
 		if len(n.Args) != 2 {
-			return // errors.Is takes exactly two arguments
+			return // errors.Is takes exactly two arguments.
 		}
 
-		switch name { //nolint:gocritic
+		switch name {
 		case "Is":
 			// Delegate analysis of errors.Is(..., ...) to comparison.
 			p.comparison(n, n.Args[0], n.Args[1], true)
+
+		default:
 		}
 
 	case "github.com/stretchr/testify/assert", "github.com/stretchr/testify/require":
 		if len(n.Args) < 3 {
-			return // Testify comparison functions typically take at least t, expected, actual
+			return // Testify comparison functions typically take at least t, expected, actual.
 		}
 
 		switch name {
 		// assert.Equal does not compare object identity, but uses [reflect.DeepEqual].
 		case "ErrorIs", "ErrorIsf", "NotErrorIs", "NotErrorIsf":
+			// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
+			p.comparison(n, n.Args[1], n.Args[2], true)
+		}
+
+	case "gotest.tools/v3/assert":
+		if len(n.Args) < 3 {
+			return // gotest.tools comparison functions typically take at least t, expected, actual.
+		}
+
+		switch name {
+		case "Equal":
+			// Delegate analysis of assert.Equal(t, ..., ...) to comparison.
+			p.comparison(n, n.Args[1], n.Args[2], false)
+
+		case "ErrorIs":
 			// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
 			p.comparison(n, n.Args[1], n.Args[2], true)
 		}

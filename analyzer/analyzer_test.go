@@ -25,10 +25,25 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestAnalyzer(t *testing.T) {
+func TestAnalyzer(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "./...")
+	dir := analysistest.TestData()
+
+	tests := []struct {
+		name    string
+		checkis bool
+		pkg     string
+	}{
+		{"nounwrap", false, "go.test/b"},
+		{"default", true, "go.test/a"},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			CheckIs = tt.checkis // needs sequential execution of subtests
+			analysistest.Run(t, dir, Analyzer, tt.pkg)
+		})
+	}
 }
 
 func TestMissingInspector(t *testing.T) {

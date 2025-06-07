@@ -63,7 +63,7 @@ var (
 func flags() flag.FlagSet {
 	var flags flag.FlagSet
 
-	flags.BoolVar(&CheckIs, "checkis", true, `suppresses diagnostic if the type has an "Is" method`)
+	flags.BoolVar(&CheckIs, "check-is", true, `suppresses diagnostic on errors if the type has an "Is" method`)
 
 	return flags
 }

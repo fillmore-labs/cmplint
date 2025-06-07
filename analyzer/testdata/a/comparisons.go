@@ -16,18 +16,20 @@
 
 package a
 
-type empty struct{}
-
 func Comparison() {
 	_ = &struct{}{} == new(struct{}) // want "is false or undefined"
 
 	_ = nil != new(struct{}) // want "is false or undefined"
+
+	_ = nil != &[0]byte{} // want "is false or undefined"
 
 	_ = &struct{ _ int }{} == new(struct{ _ int }) // want "is always false"
 
 	_ = struct{}{} == struct{}{}
 
 	_ = true == !false
+
+	_ = nil == make(map[string]int)
 }
 
 func Comparison2() {

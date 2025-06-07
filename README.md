@@ -272,7 +272,7 @@ func (e *errorB) Is(err error) bool {
   func (e *Skip) Error() string { return "host hook execution skipped." }
 
   func (r renderRunner) RunHostHook(ctx context.Context, hook *hostHook) {
-    if err := hook.run(ctx /*, ... */); errors.Is(err, &Skip{}) {
+    if err := hook.run(ctx /*, ... */); errors.Is(err, &Skip{}) { // ❌ Undefined behavior.
       // ...
     }
   }
@@ -281,13 +281,16 @@ func (e *errorB) Is(err error) bool {
   or
 
   ```go
-    err := func() error {
-      return &runtime.PanicNilError{}
-    }()
+      defer func() {
+        err := recover()
 
-    if errors.Is(err, &runtime.PanicNilError{}) { // Undefined behavior.
-      log.Println("panic error")
-    }
+        if err, ok := err.(error); ok &&
+          errors.Is(err, &runtime.PanicNilError{}) { // ❌ Undefined behavior.
+          log.Print("panic called with nil argument")
+        }
+      }()
+
+      panic(nil)
   ```
 
   While this might work due to Go runtime optimizations, it's logic is unsound. Use `errors.As` instead:
@@ -300,7 +303,7 @@ func (e *errorB) Is(err error) bool {
   ```
 
   For more details, see the blog post
-  [_"Equality of Pointers to Zero-Sized Types in Go"_](https://blog.fillmore-labs.com/posts/zerosized-1/).
+  [_"Equality of Pointers to Zero-Sized Types"_](https://blog.fillmore-labs.com/posts/zerosized-1/).
 
 ## Integration
 
@@ -321,10 +324,6 @@ jobs:
       - name: Run cmplint
         run: go run fillmore-labs.com/cmplint@latest ./...
 ```
-
-## Links
-
-- [Comparison of Pointers to Zero-Sized Types in Go](https://blog.fillmore-labs.com/posts/zerosized-1/)
 
 ## License
 

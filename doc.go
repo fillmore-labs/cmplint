@@ -47,5 +47,9 @@ Example of code flagged by cmplint:
 	if errors.Is(err, &json.UnmarshalTypeError{}) { // flagged
 		//...
 	}
+
+# Links
+
+- Equality of Pointers to Zero-Sized Types, https://blog.fillmore-labs.com/posts/zerosized-1/
 */
 package main

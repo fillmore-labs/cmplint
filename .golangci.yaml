@@ -19,9 +19,13 @@ linters:
     - varnamelen
     - wrapcheck
   settings:
+    cyclop:
+      max-complexity: 20
     errcheck:
       exclude-functions:
         - (io/fs.File).Close
+    gocognit:
+      min-complexity: 30
     govet:
       enable-all: true
       disable:

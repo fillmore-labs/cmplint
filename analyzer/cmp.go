@@ -30,12 +30,14 @@ import (
 // if the comparison involves zero-sized types.
 func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 	var (
-		t      types.Type // The type of the &CompositeLit{} or new() operand
-		isLeft bool       // is left operand
+		t      types.Type // The type of T in a &T{} or new(T) operand
+		isLeft bool       // operand detected is on the left side of the comparison
 	)
-	// We check from left to right to catch `Unwrap` methods first
+	// Determine if one of the operands is a new literal, check the left first.
 	if tl, ok := p.isAddrOfCompLitOrNew(left); ok {
 		t = tl
+		// The `isLeft` flag is used by `shouldSuppressDiagnostic` to consider `Unwrap` methods
+		// if the new literal is the first argument in an error comparison (`errors.Is(&T{}, target)`).
 		isLeft = true
 	} else if tr, ok := p.isAddrOfCompLitOrNew(right); ok {
 		t = tr
@@ -54,7 +56,7 @@ func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 		}
 
 		typeName = types.TypeString(t, types.RelativeTo(p.Pkg))
-		zeroSized = p.TypesSizes.Sizeof(t) == 0
+		zeroSized = isZeroSized(t)
 	}
 
 	if zeroSized {
@@ -95,14 +97,14 @@ func (p pass) isAddrOfCompLitOrNew(x ast.Expr) (typ types.Type, ok bool) {
 			return nil, false // some function
 		}
 
+		funType := p.TypesInfo.Types[e.Fun]
+		if !funType.IsBuiltin() {
+			return nil, false // no built-in
+		}
+
 		fun, ok := ast.Unparen(e.Fun).(*ast.Ident)
 		if !ok || fun.Name != "new" {
 			return nil, false // not new(...)
-		}
-
-		funType := p.TypesInfo.Types[e.Fun]
-		if !funType.IsBuiltin() {
-			return nil, false // not built-in new(...)
 		}
 
 		typ = p.TypesInfo.TypeOf(e.Args[0])
