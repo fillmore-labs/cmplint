@@ -25,23 +25,54 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestAnalyzer(t *testing.T) { //nolint:tparallel
+func TestAnalyzer(t *testing.T) {
 	t.Parallel()
 
 	dir := analysistest.TestData()
 
 	tests := []struct {
 		name    string
-		checkis bool
+		options Options
+		flags   map[string]string
 		pkg     string
 	}{
-		{"nounwrap", false, "go.test/b"},
-		{"default", true, "go.test/a"},
+		{
+			name:    "default",
+			options: nil,
+			pkg:     "go.test/a",
+		},
+		{
+			name: "check-is=falses",
+			options: Options{
+				WithCheckIs(false),
+			},
+			pkg: "go.test/b",
+		},
+		{
+			name: "check-is=false via flags",
+			options: Options{
+				WithName("ptrequality"),
+				WithDoc("Documentation"),
+			},
+			flags: map[string]string{
+				"check-is": "false",
+			},
+			pkg: "go.test/b",
+		},
 	}
-	for _, tt := range tests { //nolint:paralleltest
+
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			CheckIs = tt.checkis // needs sequential execution of subtests
-			analysistest.Run(t, dir, Analyzer, tt.pkg)
+			t.Parallel()
+
+			a := New(tt.options)
+			for f, v := range tt.flags {
+				if err := a.Flags.Set(f, v); err != nil {
+					t.Fatalf("Can't set flag %s=%s: %v", f, v, err)
+				}
+			}
+
+			analysistest.Run(t, dir, a, tt.pkg)
 		})
 	}
 }

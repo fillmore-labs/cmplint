@@ -16,17 +16,12 @@
 
 package analyzer
 
-import (
-	"flag"
-
-	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/passes/inspect"
-)
-
-// Documentation constants.
 const (
+	// Name is the default name.
 	Name = "cmplint"
-	Doc  = `cmplint is a Go linter (static analysis tool) that detects comparisons against
+
+	// Doc is the default documentation.
+	Doc = `cmplint is a Go linter (static analysis tool) that detects comparisons against
 the address of newly created values, such as ptr == &MyStruct{} or ptr == new(MyStruct).
 These comparisons are almost always incorrect, as each expression creates a unique
 allocation at runtime, usually yielding false or undefined results.
@@ -38,32 +33,11 @@ Example of code flagged by cmplint:
 		//...
 	}`
 
+	// URL is the home page of the [Analyzer].
 	URL = "https://pkg.go.dev/fillmore-labs.com/cmplint"
 )
 
-//nolint:gochecknoglobals
-var (
-	// Analyzer is the [analysis.Analyzer] for the cmplint linter.
-	// It checks for comparisons directly against the address of a composite literal
-	// or a newly allocated zero value using `new()`.
-	Analyzer = &analysis.Analyzer{
-		Name:  Name,
-		Doc:   Doc,
-		URL:   URL,
-		Flags: flags(),
-		Run:   run,
-
-		Requires: []*analysis.Analyzer{inspect.Analyzer},
-	}
-
-	// CheckIs indicates whether to check for `Is(error) bool` and unwrap methods.
-	CheckIs = true
-)
-
-func flags() flag.FlagSet {
-	var flags flag.FlagSet
-
-	flags.BoolVar(&CheckIs, "check-is", true, `suppresses diagnostic on errors if the type has an "Is" method`)
-
-	return flags
-}
+// Analyzer is the [analysis.Analyzer] for the cmplint linter.
+// It checks for comparisons directly against the address of a composite literal
+// or a newly allocated zero value using `new()`.
+var Analyzer = New() //nolint:gochecknoglobals

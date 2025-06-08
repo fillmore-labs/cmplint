@@ -18,8 +18,7 @@ package analyzer
 
 import "go/types"
 
-// isZeroSized determines recursively whether the underlying type of t is provably zero-sized.
-// It checks arrays of length 0 and structs where all fields are zero-sized.
+// isZeroSized determines recursively whether the given type `t` is provably zero-sized.
 func isZeroSized(t types.Type) bool {
 	switch u := t.Underlying().(type) {
 	case *types.Array:
@@ -35,7 +34,7 @@ func isZeroSized(t types.Type) bool {
 			}
 		}
 
-		// All fields are zero-sized, so the struct is zero-sized.
+		// All fields are zero-sized, so the struct itself is zero-sized.
 		return true
 
 	default:

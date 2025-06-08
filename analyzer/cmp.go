@@ -51,7 +51,7 @@ func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 	)
 
 	if t != nil { // protect against incomplete type information, shouldn't happen
-		if isError && shouldSuppressDiagnostic(t, isLeft) {
+		if isError && p.checkis && shouldSuppressDiagnostic(t, isLeft) {
 			return
 		}
 
@@ -116,11 +116,10 @@ func (p pass) isAddrOfCompLitOrNew(x ast.Expr) (typ types.Type, ok bool) {
 	}
 }
 
+// shouldSuppressDiagnostic determines whether a diagnostic should be suppressed.
+// This is primarily relevant for `errors.Is` calls, where certain patterns involving
+// `Is` or `Unwrap` methods might make the comparison legitimate despite involving a new address.
 func shouldSuppressDiagnostic(t types.Type, isLeft bool) bool {
-	if !CheckIs {
-		return false
-	}
-
 	ptr := types.NewPointer(t) // ptr is *T, the type of the newly created literal
 
 	// The standard library `errors.Is(err, target)` function checks if `err` (or an error
@@ -144,7 +143,8 @@ func shouldSuppressDiagnostic(t types.Type, isLeft bool) bool {
 		return true
 	}
 
-	// We do not have the dynamic runtime types, and this heuristic seems to work well in practice.
+	// We do not have dynamic runtime types, these heuristics rely on static type information
+	// and seem to work well in practice.
 
 	return false
 }

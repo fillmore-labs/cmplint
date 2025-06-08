@@ -64,7 +64,7 @@ func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
 	}
 
 	switch path {
-	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors":
+	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors", "github.com/pkg/errors", "github.com/juju/errors":
 		if len(n.Args) != 2 {
 			return // errors.Is takes exactly two arguments.
 		}

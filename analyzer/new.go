@@ -25,24 +25,33 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// ErrNoInspector is returned when the ast inspector is missing.
-var ErrNoInspector = errors.New("cmplint: inspector missing")
+// New creates a new instance of the analyzer.
+// It accepts a variadic number of [Option] arguments to customize its behavior,
+// such as its name, documentation, or specific checking rules.
+func New(opts ...Option) *analysis.Analyzer {
+	o := newOptions(opts)
 
-// pass wraps the analysis.Pass to provide helper methods.
-type pass struct {
-	*analysis.Pass
+	a := &analysis.Analyzer{
+		Name:  o.name,
+		Doc:   o.doc,
+		URL:   URL,
+		Flags: o.flags(),
+		Run:   o.run,
+
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
+	}
+
+	return a
 }
 
-// run is the entry point for the cmplint analyzer.
-// It traverses the AST of the package's files and reports diagnostics
-// for problematic comparisons.
-func run(a *analysis.Pass) (any, error) {
+// run is the main analysis function for the analyzer.
+func (o *options) run(a *analysis.Pass) (any, error) {
 	in, ok := a.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !ok {
 		return nil, ErrNoInspector
 	}
 
-	p := pass{a}
+	p := pass{Pass: a, checkis: o.checkis}
 
 	for n := range in.PreorderSeq((*ast.BinaryExpr)(nil), (*ast.CallExpr)(nil)) {
 		switch n := n.(type) {
@@ -55,4 +64,15 @@ func run(a *analysis.Pass) (any, error) {
 	}
 
 	return any(nil), nil
+}
+
+// ErrNoInspector is returned by the analyzer's Run method if the required
+// AST inspector result is not available from its dependencies.
+var ErrNoInspector = errors.New("inspector missing")
+
+// pass wraps the analysis.Pass and includes analyzer-specific state
+// like configuration options. It provides helper methods for the analysis logic.
+type pass struct {
+	*analysis.Pass
+	checkis bool
 }

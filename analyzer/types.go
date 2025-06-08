@@ -22,17 +22,18 @@ import (
 )
 
 // errorIsInterface holds a reference to the `interface{ Is(error) bool }` type.
-// This is used to check if a type implements the optional error comparison interface.
+// This is used by [shouldSuppressDiagnostic] to check if a type implements
+// the optional error comparison interface defined by `errors.Is`.
 //
 //nolint:gochecknoglobals
 var (
-	// `interface{ Is(error) bool }`.
+	// errorIsInterface represents `interface{ Is(error) bool }`.
 	errorIsInterface = newErrorIsInterface()
 
-	// `interface{ Unwrap() error }`.
+	// errorUnwrapInterface represents `interface{ Unwrap() error }`.
 	errorUnwrapInterface = newErrorUnwrapInterface()
 
-	// `interface{ Unwrap() []error }`.
+	// errorUnwrapArrayInterface represents `interface{ Unwrap() []error }`.
 	errorUnwrapArrayInterface = newErrorUnwrapArrayInterface()
 )
 
@@ -79,16 +80,21 @@ func newErrorUnwrapArrayInterface() *types.Interface {
 	return types.NewInterfaceType([]*types.Func{unwrapFunc}, nil).Complete()
 }
 
+// errorType returns the [types.Type] for the built-in `error` interface.
 func errorType() types.Type {
-	const errorTypName = "error"
+	const errorTypeName = "error"
 
-	return types.Universe.Lookup(errorTypName).Type()
+	obj := types.Universe.Lookup(errorTypeName)
+
+	return obj.Type()
 }
 
 // singleVar constructs a [types.Tuple] containing a single unnamed variable
-// of the specified [types.Type]. This is a helper for creating function signatures.
+// of the specified [types.Type].
 func singleVar(t types.Type) *types.Tuple {
+	const noName = ""
+
 	var noPkg *types.Package
 
-	return types.NewTuple(types.NewVar(token.NoPos, noPkg, "", t))
+	return types.NewTuple(types.NewVar(token.NoPos, noPkg, noName, t))
 }
