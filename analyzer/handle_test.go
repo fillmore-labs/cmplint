@@ -14,19 +14,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package analyzer //nolint:testpackage
 
 import (
-	"golang.org/x/tools/go/analysis/singlechecker"
+	"go/ast"
+	"go/types"
+	"testing"
 
-	cmplint "fillmore-labs.com/cmplint/analyzer"
+	"golang.org/x/tools/go/analysis"
 )
 
-func main() {
-	a := cmplint.Analyzer
-	if a.Flags.Lookup("V") == nil {
-		a.Flags.Var(versionFlag{}, "V", "print version and exit")
-	}
+func TestPass_handleCallIdent(t *testing.T) {
+	t.Parallel()
 
-	singlechecker.Main(a)
+	p := pass{Pass: &analysis.Pass{TypesInfo: &types.Info{Uses: nil}}}
+
+	id := ast.NewIdent("foo")
+
+	p.handleCallIdent(&ast.CallExpr{Fun: id}, id)
 }

@@ -20,9 +20,10 @@ import (
 	"errors"
 	"testing"
 
-	. "fillmore-labs.com/cmplint/analyzer"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
+
+	. "fillmore-labs.com/cmplint/analyzer"
 )
 
 func TestAnalyzer(t *testing.T) {
@@ -42,7 +43,7 @@ func TestAnalyzer(t *testing.T) {
 			pkg:     "go.test/a",
 		},
 		{
-			name: "check-is=falses",
+			name: "check-is=false",
 			options: Options{
 				WithCheckIs(false),
 			},
@@ -80,7 +81,7 @@ func TestAnalyzer(t *testing.T) {
 func TestMissingInspector(t *testing.T) {
 	t.Parallel()
 
-	if _, err := Analyzer.Run(&analysis.Pass{}); !errors.Is(err, ErrNoInspector) {
+	if _, err := New().Run(&analysis.Pass{}); !errors.Is(err, ErrNoInspector) {
 		t.Errorf("Expected ErrNoInspector, got %v", err)
 	}
 }

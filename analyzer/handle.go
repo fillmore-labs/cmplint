@@ -19,7 +19,6 @@ package analyzer
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
 )
 
 // handleBinaryExpr checks binary expressions for equality or inequality
@@ -58,13 +57,21 @@ func (p pass) handleCallExpr(n *ast.CallExpr) {
 // It checks if the function is one of the targeted comparison functions
 // and delegates the analysis of its arguments to comparison.
 func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
-	path, name, ok := p.pathAndName(fun)
+	// Retrieve the object used by fun.
+	obj, ok := p.TypesInfo.Uses[fun]
 	if !ok {
 		return
 	}
 
+	var path string
+	if pkg := obj.Pkg(); pkg != nil {
+		path = pkg.Path()
+	}
+
+	name := obj.Name()
+
 	switch path {
-	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors", "github.com/pkg/errors", "github.com/juju/errors":
+	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors", "github.com/pkg/errors":
 		if len(n.Args) != 2 {
 			return // errors.Is takes exactly two arguments.
 		}
@@ -104,21 +111,4 @@ func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
 			p.comparison(n, n.Args[1], n.Args[2], true)
 		}
 	}
-}
-
-// pathAndName retrieves the  package path and name of the object used by an identifier.
-// It returns the path, name, and a boolean indicating success.
-func (p pass) pathAndName(id *ast.Ident) (path, name string, ok bool) {
-	var pkg *types.Package
-
-	obj, ok := p.TypesInfo.Uses[id]
-	if ok {
-		pkg = obj.Pkg()
-	}
-
-	if pkg == nil { // In Universe scope.
-		return "", "", false
-	}
-
-	return pkg.Path(), obj.Name(), true
 }

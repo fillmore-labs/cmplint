@@ -13,11 +13,31 @@ expression creates a unique allocation at runtime, usually yielding false or und
 
 ## Quickstart
 
+### Installation
+
 Install the linter:
+
+### Homebrew
+
+```console
+brew install fillmore-labs/tap/cmplint
+```
+
+### Go
 
 ```console
 go install fillmore-labs.com/cmplint@latest
 ```
+
+### Eget
+
+[Install `eget`](https://github.com/zyedidia/eget?tab=readme-ov-file#how-to-get-eget), then
+
+```console
+eget fillmore-labs/cmplint
+```
+
+## Usage
 
 Run the linter on your project:
 

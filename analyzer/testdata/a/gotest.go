@@ -23,9 +23,11 @@ import (
 )
 
 func TestGoTestTools(t *testing.T) {
-	assert.ErrorIs(t, &myError1{}, nil) // want "is false or undefined"
+	var err *myError1
 
-	assert.Equal(t, &myError1{}, nil) // want "is false or undefined"
+	assert.ErrorIs(t, err, &myError1{}) // want "is false or undefined"
+
+	assert.Equal(t, err, &myError1{}) // want "is false or undefined"
 
 	assert.NilError(t, &myError1{})
 }

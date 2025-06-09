@@ -18,8 +18,10 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/format"
 	"go/token"
 	"go/types"
+	"strings"
 )
 
 // comparison analyzes a comparison operation (either binary like `==` or
@@ -32,44 +34,60 @@ func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 	var (
 		t      types.Type // The type of T in a &T{} or new(T) operand
 		isLeft bool       // operand detected is on the left side of the comparison
+		other  ast.Expr   // isLeft ? right : left
 	)
-	// Determine if one of the operands is a new literal, check the left first.
+
+	// Determine if one of the operands is a new literal (&T{} or new(T)), check the left first.
 	if tl, ok := p.isAddrOfCompLitOrNew(left); ok {
-		t = tl
-		// The `isLeft` flag is used by `shouldSuppressDiagnostic` to consider `Unwrap` methods
-		// if the new literal is the first argument in an error comparison (`errors.Is(&T{}, target)`).
-		isLeft = true
+		t, other, isLeft = tl, right, true
 	} else if tr, ok := p.isAddrOfCompLitOrNew(right); ok {
-		t = tr
+		t, other, isLeft = tr, left, false
 	} else {
 		return
 	}
 
-	var (
-		typeName  = "invalid type" // type name of `t` for diagnostics
-		zeroSized bool             // `t` is a zero-sized type
-	)
-
-	if t != nil { // protect against incomplete type information, shouldn't happen
-		if isError && p.checkis && shouldSuppressDiagnostic(t, isLeft) {
-			return
-		}
-
-		typeName = types.TypeString(t, types.RelativeTo(p.Pkg))
-		zeroSized = isZeroSized(t)
-	}
-
-	if zeroSized {
-		p.ReportRangef(n,
-			"Result of comparison with address of new zero-sized variable of type %q is false or undefined",
-			typeName)
-
+	// The `isLeft` flag is used by `shouldSuppressDiagnostic` to consider `Unwrap` methods
+	// if the new literal is the first argument in an error comparison (`errors.Is(&T{}, target)`).
+	if t != nil && isError && p.checkis && shouldSuppressDiagnostic(t, isLeft) {
 		return
 	}
 
-	p.ReportRangef(n,
-		"Result of comparison with address of new variable of type %q is always false",
-		typeName)
+	// Determine if the comparison is with a zero-sized type and the other operand is not nil.
+	// In this case, the result is undefined.
+	isUndefined := false
+
+	if t != nil && IsZeroSized(t) {
+		otherType, ok := p.TypesInfo.Types[other]
+		isUndefined = !ok || !otherType.IsNil()
+	}
+
+	// 4. Report diagnostic
+	typeName := "invalid type"
+	if t != nil {
+		typeName = types.TypeString(t, types.RelativeTo(p.Pkg))
+	}
+
+	otherStr := p.exprToString(other)
+
+	if isUndefined {
+		p.ReportRangef(n,
+			"Result of comparison of %q with address of new zero-sized variable of type %q is false or undefined",
+			otherStr, typeName)
+	} else {
+		p.ReportRangef(n,
+			"Result of comparison of %q with address of new variable of type %q is always false",
+			otherStr, typeName)
+	}
+}
+
+// exprToString converts an AST expression to its string representation.
+func (p pass) exprToString(e ast.Expr) string {
+	var s strings.Builder
+	if err := format.Node(&s, p.Fset, e); err != nil {
+		return "invalid"
+	}
+
+	return s.String()
 }
 
 // isAddrOfCompLitOrNew checks if the given AST expression `x` represents
@@ -126,7 +144,7 @@ func shouldSuppressDiagnostic(t types.Type, isLeft bool) bool {
 	// in its `Unwrap` tree) matches `target`. This matching can occur in several ways.
 	// For this linter, which flags `errors.Is(err, &T{})` (where `&T{}` is the `target`),
 	// we are concerned with two scenarios for suppression:
-	//
+
 	// 1. If `target` could be matched by an `Is(error) bool` method of `err`, assume `target`
 	// also has an `Is(error) bool` method and suppress the diagnostic in this case.
 	if types.Implements(ptr, errorIsInterface) {

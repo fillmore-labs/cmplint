@@ -18,28 +18,44 @@ package analyzer
 
 import "go/types"
 
-// isZeroSized determines recursively whether the given type `t` is provably zero-sized.
-func isZeroSized(t types.Type) bool {
-	switch u := t.Underlying().(type) {
-	case *types.Array:
-		// An array is zero-sized if its length is 0 or its element type is zero-sized.
-		// The former (len 0) is the primary case for zero-sized arrays.
-		return u.Len() == 0 || isZeroSized(u.Elem())
+// IsZeroSized determines whether the type t is provably zero-sized.
+func IsZeroSized(t types.Type) bool {
+	const (
+		// initialStackCapacity is the initial capacity for the type traversal stack
+		// This reduces allocations for most common cases.
+		initialStackCapacity = 10
 
-	case *types.Struct:
-		// A struct is zero-sized if all its fields are zero-sized.
-		for i := range u.NumFields() {
-			if !isZeroSized(u.Field(i).Type()) {
-				return false
+		// maxIterations protects from recusive types (should not happen) and types
+		// that are too costly to evaluate.
+		maxIterations = 100
+	)
+
+	store := [initialStackCapacity]types.Type{t}
+	stack := store[:1]
+
+	for budget := maxIterations; budget > 0 && len(stack) > 0; budget-- {
+		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		switch u := top.Underlying().(type) {
+		case *types.Array:
+			// An array is zero-sized if its length is 0 or its element type is zero-sized.
+			if u.Len() > 0 {
+				stack = append(stack, u.Elem())
 			}
+
+		case *types.Struct:
+			// A struct is zero-sized if all its fields are zero-sized.
+			for i := range u.NumFields() {
+				stack = append(stack, u.Field(i).Type())
+			}
+
+		default:
+			// Other types (Basic, Chan, Interface, Map, Pointer, Signature, Slice, TypeParam)
+			// are not zero-sized.
+			return false
 		}
-
-		// All fields are zero-sized, so the struct itself is zero-sized.
-		return true
-
-	default:
-		// Other types (Basic, Chan, Interface, Map, Pointer, Signature, Slice, TypeParam)
-		// are not zero-sized.
-		return false
 	}
+
+	return len(stack) == 0 // All types are zero-sized
 }

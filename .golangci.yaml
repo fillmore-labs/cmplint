@@ -11,14 +11,21 @@ formatters:
 linters:
   default: all
   disable:
+    # keep-sorted start
     - depguard
     - dupl
+    - embeddedstructfieldcheck
     - exhaustruct
     - forbidigo
+    - funcorder
+    - noinlineerr
     - nonamedreturns
     - varnamelen
     - wrapcheck
+    - wsl
+    # keep-sorted end
   settings:
+    # keep-sorted start
     cyclop:
       max-complexity: 20
     errcheck:
@@ -46,6 +53,7 @@ linters:
       ignore: ["new"]
     revive:
       rules:
+        # keep-sorted start
         - name: atomic
         - name: blank-imports
         - name: context-as-argument
@@ -76,10 +84,15 @@ linters:
         - name: unused-parameter
         - name: var-declaration
         - name: var-naming
+          # keep-sorted end
     testifylint:
       enable-all: true
       disable:
         - require-error
+    wsl_v5:
+      disable:
+        - assign
+        # keep-sorted end
   exclusions:
     rules:
       - path: _test\.go$

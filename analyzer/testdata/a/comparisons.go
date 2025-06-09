@@ -19,13 +19,19 @@ package a
 func Comparison() {
 	_ = &struct{}{} == new(struct{}) // want "is false or undefined"
 
-	_ = nil != new(struct{}) // want "is false or undefined"
+	_ = new(struct{}) != &struct{}{} // want "is false or undefined"
 
-	_ = nil != &[0]byte{} // want "is false or undefined"
+	_ = new([0]byte) != &[0]byte{} // want "is false or undefined"
+
+	_ = new([1]struct{}) != &[1]struct{}{} // want "is false or undefined"
 
 	_ = &struct{ _ int }{} == new(struct{ _ int }) // want "is always false"
 
 	_ = struct{}{} == struct{}{}
+
+	_ = nil == new(struct{}) // want "is always false"
+
+	_ = &struct{}{} == nil // want "is always false"
 
 	_ = true == !false
 
@@ -48,6 +54,7 @@ func Comparison2() {
 
 func Comparison3() {
 	type MyStruct struct{ _ int }
+	var nil *MyStruct
 
 	if (nil == &MyStruct{}) { // want "is always false"
 		// ...

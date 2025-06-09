@@ -25,25 +25,6 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// New creates a new instance of the analyzer.
-// It accepts a variadic number of [Option] arguments to customize its behavior,
-// such as its name, documentation, or specific checking rules.
-func New(opts ...Option) *analysis.Analyzer {
-	o := newOptions(opts)
-
-	a := &analysis.Analyzer{
-		Name:  o.name,
-		Doc:   o.doc,
-		URL:   URL,
-		Flags: o.flags(),
-		Run:   o.run,
-
-		Requires: []*analysis.Analyzer{inspect.Analyzer},
-	}
-
-	return a
-}
-
 // run is the main analysis function for the analyzer.
 func (o *options) run(a *analysis.Pass) (any, error) {
 	in, ok := a.ResultOf[inspect.Analyzer].(*inspector.Inspector)

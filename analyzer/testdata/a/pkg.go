@@ -14,19 +14,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package a
 
-import (
-	"golang.org/x/tools/go/analysis/singlechecker"
+import "github.com/pkg/errors"
 
-	cmplint "fillmore-labs.com/cmplint/analyzer"
-)
-
-func main() {
-	a := cmplint.Analyzer
-	if a.Flags.Lookup("V") == nil {
-		a.Flags.Var(versionFlag{}, "V", "print version and exit")
-	}
-
-	singlechecker.Main(a)
+func PkgErrors() {
+	_ = errors.Is(myError1{}, &myError1{}) // want "is false or undefined"
 }

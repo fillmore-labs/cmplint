@@ -16,6 +16,11 @@
 
 package analyzer
 
+import (
+	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/inspect"
+)
+
 const (
 	// Name is the default name.
 	Name = "cmplint"
@@ -33,11 +38,31 @@ Example of code flagged by cmplint:
 		//...
 	}`
 
-	// URL is the home page of the [Analyzer].
+	// URL is the home page of the [analysis.Analyzer].
 	URL = "https://pkg.go.dev/fillmore-labs.com/cmplint"
 )
 
 // Analyzer is the [analysis.Analyzer] for the cmplint linter.
+//
 // It checks for comparisons directly against the address of a composite literal
 // or a newly allocated zero value using `new()`.
 var Analyzer = New() //nolint:gochecknoglobals
+
+// New creates a new instance of the [analysis.Analyzer] for the cmplint linter.
+//
+// It accepts a variadic number of [Option] arguments to customize its behavior,
+// such as its name, documentation, or specific checking rules.
+func New(opts ...Option) *analysis.Analyzer {
+	o := makeOptions(opts)
+
+	return &analysis.Analyzer{
+		Name: o.name,
+		Doc:  o.doc,
+		URL:  URL,
+
+		Flags: o.flags(),
+		Run:   o.run,
+
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
+	}
+}
