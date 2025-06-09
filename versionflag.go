@@ -17,19 +17,11 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime/debug"
-
-	cmplint "fillmore-labs.com/cmplint/analyzer"
 )
-
-func addVersionFlag(flags *flag.FlagSet) {
-	if flags.Lookup("V") == nil {
-		flags.Var(versionFlag{}, "V", "print version and exit")
-	}
-}
 
 // versionFlag represents a [flag] to print version information and exit the program.
 type versionFlag struct{}
@@ -37,13 +29,16 @@ type versionFlag struct{}
 func (versionFlag) IsBoolFlag() bool { return true }
 func (versionFlag) String() string   { return "true" }
 func (versionFlag) Set(_ string) error {
-	const progname = cmplint.Name
+	progname, err := os.Executable()
+	if err != nil {
+		return err
+	}
 
 	if bi, ok := debug.ReadBuildInfo(); ok {
 		fmt.Printf("%s version %s build with %s\n",
-			progname, bi.Main.Version, bi.GoVersion)
+			filepath.Base(progname), bi.Main.Version, bi.GoVersion)
 	} else {
-		fmt.Printf("%s version (unknown)\n", progname)
+		fmt.Printf("%s version (unknown)\n", filepath.Base(progname))
 	}
 
 	os.Exit(0)
