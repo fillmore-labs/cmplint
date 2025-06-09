@@ -26,25 +26,21 @@ type options struct {
 	checkis bool
 }
 
-// newOptions returns a new [options] struct initialized with default values.
-// These defaults are used if no overriding options or flags are provided.
-func newOptions(opts Options) *options {
-	o := &options{ // Defaults
+// defaultOptions returns a [options] struct initialized with default values.
+func defaultOptions() *options {
+	return &options{ // Defaults
 		name:    Name,
 		doc:     Doc,
 		checkis: true,
 	}
-	o.apply(opts)
-
-	return o
 }
 
-// apply iterates through a list of [Option] values and applies each one
-// to the [options] struct `o`, modifying it in place.
-func (o *options) apply(opts Options) {
-	for _, opt := range opts {
-		opt.apply(o)
-	}
+// makeOptions returns a [options] struct with overriding [Option]s applied.
+func makeOptions(opts Options) *options {
+	o := defaultOptions()
+	opts.apply(o)
+
+	return o
 }
 
 // flags returns a [flag.FlagSet] containing command-line flags that can
@@ -53,12 +49,14 @@ func (o *options) apply(opts Options) {
 // The returned FlagSet is used by the analysis driver to parse command-line
 // arguments for the analyzer.
 func (o *options) flags() flag.FlagSet {
-	var flags flag.FlagSet
+	var fs flag.FlagSet
 
-	flags.BoolVar(&o.checkis, "check-is", o.checkis,
+	fs.Init(o.name, flag.ContinueOnError)
+
+	fs.BoolVar(&o.checkis, "check-is", o.checkis,
 		`suppress diagnostic on errors.Is if the compared type has an "Is(error) bool" method`)
 
-	return flags
+	return fs
 }
 
 // Option configures specific behavior of the [analysis.Analyzer].

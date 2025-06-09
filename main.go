@@ -17,14 +17,16 @@
 package main
 
 import (
-	cmplint "fillmore-labs.com/cmplint/analyzer"
 	"golang.org/x/tools/go/analysis/singlechecker"
+
+	cmplint "fillmore-labs.com/cmplint/analyzer"
 )
 
 func main() {
-	a := cmplint.Analyzer
-
-	addVersionFlag(&a.Flags)
+	a := cmplint.New()
+	if a.Flags.Lookup("V") == nil {
+		a.Flags.Var(versionFlag{}, "V", "print version and exit")
+	}
 
 	singlechecker.Main(a)
 }

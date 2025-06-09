@@ -14,34 +14,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package a
 
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime/debug"
-)
+import "github.com/pkg/errors"
 
-// versionFlag represents a [flag] to print version information and exit the program.
-type versionFlag struct{}
-
-func (versionFlag) IsBoolFlag() bool { return true }
-func (versionFlag) String() string   { return "true" }
-func (versionFlag) Set(_ string) error {
-	progname, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		fmt.Printf("%s version %s build with %s\n",
-			filepath.Base(progname), bi.Main.Version, bi.GoVersion)
-	} else {
-		fmt.Printf("%s version (unknown)\n", filepath.Base(progname))
-	}
-
-	os.Exit(0)
-
-	return nil
+func PkgErrors() {
+	_ = errors.Is(myError1{}, &myError1{}) // want "is false or undefined"
 }

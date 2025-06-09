@@ -14,34 +14,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package analyzer //nolint:testpackage
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime/debug"
+	"go/ast"
+	"go/types"
+	"testing"
+
+	"golang.org/x/tools/go/analysis"
 )
 
-// versionFlag represents a [flag] to print version information and exit the program.
-type versionFlag struct{}
+func TestPass_handleCallIdent(t *testing.T) {
+	t.Parallel()
 
-func (versionFlag) IsBoolFlag() bool { return true }
-func (versionFlag) String() string   { return "true" }
-func (versionFlag) Set(_ string) error {
-	progname, err := os.Executable()
-	if err != nil {
-		return err
-	}
+	p := pass{Pass: &analysis.Pass{TypesInfo: &types.Info{Uses: nil}}}
 
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		fmt.Printf("%s version %s build with %s\n",
-			filepath.Base(progname), bi.Main.Version, bi.GoVersion)
-	} else {
-		fmt.Printf("%s version (unknown)\n", filepath.Base(progname))
-	}
+	id := ast.NewIdent("foo")
 
-	os.Exit(0)
-
-	return nil
+	p.handleCallIdent(&ast.CallExpr{Fun: id}, id)
 }
