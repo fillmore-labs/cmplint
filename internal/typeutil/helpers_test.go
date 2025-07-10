@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package analyzer //nolint:testpackage
+package typeutil_test
 
 import (
 	"go/ast"
@@ -24,63 +24,7 @@ import (
 	"go/types"
 	"strings"
 	"testing"
-
-	"golang.org/x/tools/go/analysis"
-
-	"fillmore-labs.com/cmplint/internal/typeutil"
 )
-
-func TestHandleCallExpr(t *testing.T) {
-	t.Parallel()
-
-	testfunctions := map[typeutil.FuncName]funcType{
-		{Path: "test", Name: "funcErr1"}: funcErr1,
-		{Path: "test", Name: "funcCmp1"}: funcCmp1,
-		{Path: "test", Name: "funcNone"}: funcNone,
-	}
-
-	tests := []struct {
-		name string
-		src  string
-	}{
-		{
-			name: "funcErr1 with two arguments",
-			src: `func funcErr1(_, _ int) int { return 0 }
-var _ = funcErr1(0, 0)`,
-		},
-		{
-			name: "funcCmp1 with two arguments",
-			src: `func funcCmp1(_, _ int) int { return 0 }
-var _ = funcCmp1(0, 0)`,
-		},
-
-		{
-			name: "funcNone",
-			src: `func funcNone(_, _ int) int { return 0 }
-var _ = funcNone(0, 0)`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			info, pkg, fset, astFile := parseSource(t, tt.src)
-
-			p := pass{
-				Pass: &analysis.Pass{
-					Fset:      fset,
-					Pkg:       pkg,
-					TypesInfo: info,
-				},
-			}
-
-			callExpr := lastDeclCallExpr(astFile)
-
-			p.handleCallExpr(callExpr, testfunctions)
-		})
-	}
-}
 
 // parseSource is a helper to parse source and get [types.Info] and [types.Package].
 func parseSource(tb testing.TB, src string) (*types.Info, *types.Package, *token.FileSet, *ast.File) {
@@ -110,8 +54,10 @@ func parseSource(tb testing.TB, src string) (*types.Info, *types.Package, *token
 	conf := types.Config{Importer: importer.Default()}
 
 	info := &types.Info{
-		Types: make(map[ast.Expr]types.TypeAndValue),
-		Uses:  make(map[*ast.Ident]types.Object),
+		Types:      make(map[ast.Expr]types.TypeAndValue),
+		Defs:       make(map[*ast.Ident]types.Object),
+		Uses:       make(map[*ast.Ident]types.Object),
+		Selections: make(map[*ast.SelectorExpr]*types.Selection),
 	}
 
 	pkg, err := conf.Check(pkgname, fset, []*ast.File{f}, info)

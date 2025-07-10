@@ -14,33 +14,29 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package a
+package analyzer
 
 import (
-	"errors"
 	"fmt"
+	"go/ast"
+	"io"
+	"log"
+	"strings"
 )
 
-type genericError[T fmt.Stringer] struct {
-	e T
+// Fprint outputs the syntax tree representation of the given AST node `n` to `w“.
+// This can be useful for debugging purposes.
+func (p pass) Fprint(w io.Writer, n ast.Node) error {
+	return ast.Fprint(w, p.Fset, n, ast.NotNilFilter)
 }
 
-func (g genericError[T]) Error() string {
-	return "error: " + g.e.String()
-}
+// LogErrorf logs an internal ("should not happen") failure message.
+func (p pass) LogErrorf(n ast.Node, format string, args ...any) {
+	var sb strings.Builder
+	_, _ = sb.WriteString("Internal error: ")
+	_, _ = fmt.Fprintf(&sb, format, args...)
+	_ = sb.WriteByte('\n')
+	_ = p.Fprint(&sb, n)
 
-type empty struct{}
-
-func (empty) String() string { return "empty" }
-
-func Generic[T fmt.Stringer]() {
-	_ = errors.Is(&genericError[T]{}, &genericError[T]{}) // want "is always false"
-
-	_ = errors.Is(&genericError[empty]{}, &genericError[empty]{}) // want "is false or undefined"
-}
-
-func Generic2[T, U fmt.Stringer]() {
-	Generic[T]()
-
-	Generic2[T, U]()
+	log.Print(sb.String())
 }

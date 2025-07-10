@@ -39,6 +39,10 @@ type myErrorEmbedded struct {
 	*myError1
 }
 
+func wrap(err, target error) (error, error) {
+	return err, target
+}
+
 func Errors() {
 	_ = errors.Is(myError1{}, &myError1{}) // want "is false or undefined"
 
@@ -49,6 +53,8 @@ func Errors() {
 	_ = errors.Is(&struct{ myError1 }{}, &myError1{}) // want "is false or undefined"
 
 	_ = Is(&myError1{}, &myError1{}) // want "is false or undefined"
+
+	_ = Is(wrap(&myError1{}, &myError1{}))
 
 	var e myError1
 	_ = errors.Is(nil, &e)
@@ -123,4 +129,16 @@ func Errors4() {
 	_ = errors.Is(&myErrorWithUnwrapArray{}, os.ErrProcessDone)
 
 	_ = errors.Is(os.ErrProcessDone, &myErrorWithUnwrap{}) // want "type \"?myErrorWithUnwrap\"?"
+}
+
+func Interface() {
+	var errors interface{ Is(err, target error) bool }
+
+	_ = errors.Is(myError1{}, &myError1{})
+}
+
+func Index() {
+	var Is [1]func(err, target error) bool
+
+	_ = Is[0](myError1{}, &myError1{})
 }

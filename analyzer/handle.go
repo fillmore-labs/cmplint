@@ -19,6 +19,8 @@ package analyzer
 import (
 	"go/ast"
 	"go/token"
+
+	"fillmore-labs.com/cmplint/internal/typeutil"
 )
 
 // handleBinaryExpr checks binary expressions for equality or inequality
@@ -31,84 +33,63 @@ func (p pass) handleBinaryExpr(n *ast.BinaryExpr) {
 	}
 }
 
-// handleCallExpr checks call expressions to identify specific functions
-// like errors.Is or testify assertion functions that perform comparisons
-// and might involve addresses of composite literals or new() calls.
-func (p pass) handleCallExpr(n *ast.CallExpr) {
-	switch fun := ast.Unparen(n.Fun).(type) {
-	case *ast.SelectorExpr:
-		// Optimize to ignore method calls and function pointer fields.
-		// Should be benchmarked to verify it is really faster.
-		if _, ok := p.TypesInfo.Selections[fun]; ok {
-			return
-		}
-
-		p.handleCallIdent(n, fun.Sel)
-
-	case *ast.Ident:
-		p.handleCallIdent(n, fun)
-	}
-}
-
-// handleCallIdent processes function calls by identifier, specifically looking
+// handleCallExpr processes function calls by identifier, specifically looking
 // for `errors.Is` (from standard library or x/exp) and assertion functions
 // from `github.com/stretchr/testify` that perform error comparisons.
 //
 // It checks if the function is one of the targeted comparison functions
 // and delegates the analysis of its arguments to comparison.
-func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
-	// Retrieve the object used by fun.
-	obj, ok := p.TypesInfo.Uses[fun]
+func (p pass) handleCallExpr(n *ast.CallExpr, functions map[typeutil.FuncName]funcType) {
+	if len(n.Args) < 2 { // Other function or multi-valued argument
+		return
+	}
+
+	// Retrieve the definition of the called function.
+	fun, methodExpr, ok := typeutil.FuncOf(p.TypesInfo, n.Fun)
 	if !ok {
 		return
 	}
 
-	var path string
-	if pkg := obj.Pkg(); pkg != nil {
-		path = pkg.Path()
+	funcName := typeutil.NewFuncName(fun)
+
+	ftyp, ok := functions[funcName]
+	if !ok {
+		return
 	}
 
-	name := obj.Name()
+	baseArg := 0
+	if methodExpr {
+		baseArg = 1
+	}
 
-	switch path {
-	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors", "github.com/pkg/errors":
-		if len(n.Args) != 2 {
-			return // errors.Is takes exactly two arguments.
+	switch ftyp {
+	case funcErr0:
+		// Delegate analysis of errors.Is(..., ...) to comparison.
+		p.comparison(n, n.Args[baseArg], n.Args[baseArg+1], true)
+
+	case funcErr1:
+		if len(n.Args) < 3+baseArg { // should not happen
+			p.LogErrorf(n, "Got only %d arguments for %s, expected at least %d", len(n.Args), funcName, 3+baseArg)
+
+			return
 		}
 
-		switch name {
-		case "Is":
-			// Delegate analysis of errors.Is(..., ...) to comparison.
-			p.comparison(n, n.Args[0], n.Args[1], true)
+		// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
+		p.comparison(n, n.Args[baseArg+1], n.Args[baseArg+2], true)
 
-		default:
+	case funcCmp1:
+		if len(n.Args) < 3+baseArg { // should not happen
+			p.LogErrorf(n, "Got only %d arguments for %s, expected at least %d", len(n.Args), funcName, 3+baseArg)
+
+			return
 		}
 
-	case "github.com/stretchr/testify/assert", "github.com/stretchr/testify/require":
-		if len(n.Args) < 3 {
-			return // Testify comparison functions typically take at least t, expected, actual.
-		}
+		// Delegate analysis of assert.Equal(t, ..., ...) to comparison.
+		p.comparison(n, n.Args[baseArg+1], n.Args[baseArg+2], false)
 
-		switch name {
-		// assert.Equal does not compare object identity, but uses [reflect.DeepEqual].
-		case "ErrorIs", "ErrorIsf", "NotErrorIs", "NotErrorIsf":
-			// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
-			p.comparison(n, n.Args[1], n.Args[2], true)
-		}
+	case funcNone: // should not happen
+		p.LogErrorf(n, "Unconfigured function %s", funcName)
 
-	case "gotest.tools/v3/assert":
-		if len(n.Args) < 3 {
-			return // gotest.tools comparison functions typically take at least t, expected, actual.
-		}
-
-		switch name {
-		case "Equal":
-			// Delegate analysis of assert.Equal(t, ..., ...) to comparison.
-			p.comparison(n, n.Args[1], n.Args[2], false)
-
-		case "ErrorIs":
-			// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
-			p.comparison(n, n.Args[1], n.Args[2], true)
-		}
+		return
 	}
 }

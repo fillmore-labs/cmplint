@@ -40,7 +40,7 @@ func (o *options) run(a *analysis.Pass) (any, error) {
 			p.handleBinaryExpr(n)
 
 		case *ast.CallExpr: // Check for errors.Is(x, y) and testify functions.
-			p.handleCallExpr(n)
+			p.handleCallExpr(n, functions)
 		}
 	}
 

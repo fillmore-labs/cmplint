@@ -61,7 +61,7 @@ func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 		isUndefined = !ok || !otherType.IsNil()
 	}
 
-	// 4. Report diagnostic
+	// Report diagnostic
 	typeName := "invalid type"
 	if t != nil {
 		typeName = types.TypeString(t, types.RelativeTo(p.Pkg))
@@ -145,8 +145,8 @@ func shouldSuppressDiagnostic(t types.Type, isLeft bool) bool {
 	// For this linter, which flags `errors.Is(err, &T{})` (where `&T{}` is the `target`),
 	// we are concerned with two scenarios for suppression:
 
-	// 1. If `target` could be matched by an `Is(error) bool` method of `err`, assume `target`
-	// also has an `Is(error) bool` method and suppress the diagnostic in this case.
+	// 1. If `target` could be matched by an `Is(error) bool` method of `err`, assume it would
+	//    be the `Is(error) bool` method of `target` and suppress the diagnostic in this case.
 	if types.Implements(ptr, errorIsInterface) {
 		return true
 	}

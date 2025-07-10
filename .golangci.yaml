@@ -7,6 +7,14 @@ run:
 formatters:
   enable:
     - gofumpt
+    - goimports
+
+  settings:
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - fillmore-labs.com/cmplint
 
 linters:
   default: all
@@ -17,9 +25,13 @@ linters:
     - embeddedstructfieldcheck
     - exhaustruct
     - forbidigo
+    - forcetypeassert
     - funcorder
+    - funlen
+    - gocognit
     - noinlineerr
     - nonamedreturns
+    - recvcheck
     - varnamelen
     - wrapcheck
     - wsl
@@ -40,6 +52,9 @@ linters:
       settings:
         shadow:
           strict: true
+        printf:
+          funcs:
+            - (fillmore-labs.com/cmplint/analyzer.pass).LogErrorf
     ireturn:
       allow:
         - anon
@@ -97,6 +112,7 @@ linters:
     rules:
       - path: _test\.go$
         linters:
+          - funlen
           - govet
         text: "lostcancel"
       - path: ^main\.go$

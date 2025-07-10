@@ -21,14 +21,48 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+func wrap1(t assert.TestingT, err, target error) (assert.TestingT, error, error) {
+	return t, err, target
+}
 
 func TestTestify(t *testing.T) {
 	var err *myError1
 
-	require.ErrorIs(t, err, &myError1{}) // want "is false or undefined"
+	assert.ErrorIs(t, err, &myError1{})         // want "is false or undefined"
+	assert.ErrorIsf(t, err, &myError1{}, "")    // want "is false or undefined"
+	assert.NotErrorIs(t, err, &myError1{})      // want "is false or undefined"
+	assert.NotErrorIsf(t, err, &myError1{}, "") // want "is false or undefined"
+
+	require.ErrorIs(t, err, &myError1{})         // want "is false or undefined"
+	require.ErrorIsf(t, err, &myError1{}, "")    // want "is false or undefined"
+	require.NotErrorIs(t, err, &myError1{})      // want "is false or undefined"
+	require.NotErrorIsf(t, err, &myError1{}, "") // want "is false or undefined"
+
+	assert.ErrorIs(wrap1(t, err, &myError1{}))
 
 	assert.Equal(t, err, &myError1{})
 
 	assert.Error(t, &myError1{})
+
+	var s suite.Suite
+	r := s.Require()
+
+	s.ErrorIs(err, &myError1{})         // want "is false or undefined"
+	s.ErrorIsf(err, &myError1{}, "")    // want "is false or undefined"
+	s.NotErrorIs(err, &myError1{})      // want "is false or undefined"
+	s.NotErrorIsf(err, &myError1{}, "") // want "is false or undefined"
+
+	r.ErrorIs(err, &myError1{})         // want "is false or undefined"
+	r.ErrorIsf(err, &myError1{}, "")    // want "is false or undefined"
+	r.NotErrorIs(err, &myError1{})      // want "is false or undefined"
+	r.NotErrorIsf(err, &myError1{}, "") // want "is false or undefined"
+
+	(*assert.Assertions).ErrorIs(s.Assertions, err, &myError1{}) // want "is false or undefined"
+	(*require.Assertions).ErrorIs(r, err, &myError1{})           // want "is false or undefined"
+
+	s.Equal(err, &myError1{})
+	r.Equal(err, &myError1{})
 }
