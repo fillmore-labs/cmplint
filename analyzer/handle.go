@@ -31,44 +31,25 @@ func (p pass) handleBinaryExpr(n *ast.BinaryExpr) {
 	}
 }
 
-// handleCallExpr checks call expressions to identify specific functions
-// like errors.Is or testify assertion functions that perform comparisons
-// and might involve addresses of composite literals or new() calls.
-func (p pass) handleCallExpr(n *ast.CallExpr) {
-	switch fun := ast.Unparen(n.Fun).(type) {
-	case *ast.SelectorExpr:
-		// Optimize to ignore method calls and function pointer fields.
-		// Should be benchmarked to verify it is really faster.
-		if _, ok := p.TypesInfo.Selections[fun]; ok {
-			return
-		}
-
-		p.handleCallIdent(n, fun.Sel)
-
-	case *ast.Ident:
-		p.handleCallIdent(n, fun)
-	}
-}
-
-// handleCallIdent processes function calls by identifier, specifically looking
+// handleCallExpr processes function calls by identifier, specifically looking
 // for `errors.Is` (from standard library or x/exp) and assertion functions
 // from `github.com/stretchr/testify` that perform error comparisons.
 //
 // It checks if the function is one of the targeted comparison functions
 // and delegates the analysis of its arguments to comparison.
-func (p pass) handleCallIdent(n *ast.CallExpr, fun *ast.Ident) {
-	// Retrieve the object used by fun.
-	obj, ok := p.TypesInfo.Uses[fun]
+func (p pass) handleCallExpr(n *ast.CallExpr) {
+	// Retrieve the definition of the called function.
+	fun, ok := p.funcOf(n.Fun)
 	if !ok {
 		return
 	}
 
 	var path string
-	if pkg := obj.Pkg(); pkg != nil {
+	if pkg := fun.Pkg(); pkg != nil {
 		path = pkg.Path()
 	}
 
-	name := obj.Name()
+	name := fun.Name()
 
 	switch path {
 	case "errors", "golang.org/x/exp/errors", "golang.org/x/xerrors", "github.com/pkg/errors":

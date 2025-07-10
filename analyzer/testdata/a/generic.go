@@ -38,3 +38,9 @@ func Generic[T fmt.Stringer]() {
 
 	_ = errors.Is(&genericError[empty]{}, &genericError[empty]{}) // want "is false or undefined"
 }
+
+func Generic2[T, U fmt.Stringer]() {
+	Generic[T]()
+
+	Generic2[T, U]()
+}
