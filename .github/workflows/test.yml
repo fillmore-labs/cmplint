@@ -13,7 +13,7 @@ jobs:
     name: Test on Go ${{ matrix.go }}
     permissions:
       checks: write
-      contents: read
+      contents: write
       pull-requests: read
       statuses: write
     runs-on: ubuntu-24.04-arm
@@ -22,12 +22,12 @@ jobs:
         go: ["1.25", "1.24", "1.23"]
         include:
           - go: "1.25"
-            go-version: "1.25.0-rc.1"
+            go-version: "1.25.0-rc.2"
           - go: "1.24"
-            go-version: "1.24.4"
-            update-coverage: true
+            go-version: "1.24.5"
+            update-meta: true
           - go: "1.23"
-            go-version: "1.23.10"
+            go-version: "1.23.11"
     env:
       GOTOOLCHAIN: local
     steps:
@@ -50,7 +50,13 @@ jobs:
           GOEXPERIMENT: aliastypeparams
       - name: 🧑🏻‍💻 codecov
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24  # v5.4.3
-        if: ${{ matrix.update-coverage }}
+        if: ${{ matrix.update-meta }}
         with:
           files: ./cover.out
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: 🛜 Dependencies
+        uses: actions/go-dependency-submission@f35d5c9af13ce9cc32f7930b171e315e878f6921  # v2.0.3
+        if: ${{ matrix.update-meta }}
+        with:
+          go-mod-path: go.mod
+          go-build-target: .
