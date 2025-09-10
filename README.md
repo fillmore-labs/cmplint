@@ -11,6 +11,16 @@
 such as `ptr == &MyStruct{}` or `ptr == new(MyStruct)`. These comparisons are almost always incorrect, as each
 expression creates a unique allocation at runtime, usually yielding false or undefined results.
 
+## ⚠️ Deprecation Notice: The Linter Has Moved
+
+The functionality of `cmplint` has been integrated into the [`errortype`](https://github.com/fillmore-labs/errortype)
+linter and will be further developed there.
+
+Most of the issues `cmplint` found were related to `errors.Is` comparisons, which created a natural overlap with
+`errortype`.
+
+The rest of this README is kept for historical purposes.
+
 ## Quickstart
 
 ### Installation
@@ -177,8 +187,8 @@ func (e *wrappedError) Unwrap() error { return e.Cause } // This suppresses the 
 
 <details><summary><b>Custom <code>Is(error) bool</code> method example.</b></summary>
 
-When the static type of an error is just the `error` interface, the analyzer cannot know its dynamic type, so the
-diagnostic is also suppressed when the _target_ has an `Is(error) bool` method:
+When the static type of an error is just the `error` interface, the analyzer cannot know its dynamic type. Therefore,
+the diagnostic is also suppressed when the _target_ has an `Is(error) bool` method:
 
 ```go
 type customError struct{ Code int }
