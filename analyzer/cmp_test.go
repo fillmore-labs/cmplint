@@ -90,8 +90,7 @@ func TestExprToString(t *testing.T) { //nolint:funlen
 				e = expr
 			}
 
-			got := p.exprToString(e)
-			if got != tc.want {
+			if got := p.exprToString(e); got != tc.want {
 				t.Errorf("exprToString() = %q, want %q", got, tc.want)
 			}
 		})

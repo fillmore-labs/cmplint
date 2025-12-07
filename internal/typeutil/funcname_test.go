@@ -65,7 +65,7 @@ func TestNewFuncName(t *testing.T) {
 
 				return types.NewFunc(token.NoPos, pkg, "myFunc", sig)
 			}(),
-			wantFuncName: "(*example.com/testpkg.MyType).myFunc",
+			wantFuncName: "(example.com/testpkg.MyType).myFunc",
 		},
 		{
 			name: "interface method call",
@@ -116,7 +116,7 @@ func TestNewFuncName(t *testing.T) {
 
 				return types.NewFunc(token.NoPos, pkg, "myFunc", sig)
 			}(),
-			wantFuncName: "(*<invalid>).myFunc",
+			wantFuncName: "(<invalid>).myFunc",
 		},
 	}
 
@@ -124,8 +124,7 @@ func TestNewFuncName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			name := NewFuncName(tt.fun)
-			if name.String() != tt.wantFuncName {
+			if name := NewFuncName(tt.fun); name.String() != tt.wantFuncName {
 				t.Errorf("NewFuncName() = %q, want %q", name, tt.wantFuncName)
 			}
 		})
