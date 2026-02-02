@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestGoTestTools(t *testing.T) {
@@ -28,6 +29,8 @@ func TestGoTestTools(t *testing.T) {
 	assert.ErrorIs(t, err, &myError1{}) // want "is false or undefined"
 
 	assert.Equal(t, err, &myError1{}) // want "is false or undefined"
+
+	_ = cmp.Equal(err, &myError1{})().Success() // want "is false or undefined"
 
 	assert.NilError(t, &myError1{})
 }

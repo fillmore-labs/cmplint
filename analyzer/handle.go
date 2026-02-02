@@ -77,6 +77,10 @@ func (p pass) handleCallExpr(n *ast.CallExpr, functions map[typeutil.FuncName]fu
 		// Delegate analysis of assert.ErrorIs(t, ..., ...) to comparison.
 		p.comparison(n, n.Args[baseArg+1], n.Args[baseArg+2], true)
 
+	case funcCmp0:
+		// Delegate analysis of cmp(..., ...) to comparison.
+		p.comparison(n, n.Args[baseArg], n.Args[baseArg+1], true)
+
 	case funcCmp1:
 		if len(n.Args) < 3+baseArg { // should not happen
 			p.LogErrorf(n, "Got only %d arguments for %s, expected at least %d", len(n.Args), funcName, 3+baseArg)

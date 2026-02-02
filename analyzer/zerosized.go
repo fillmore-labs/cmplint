@@ -34,10 +34,8 @@ func IsZeroSized(t types.Type) bool {
 	stack := store[:1]
 
 	for budget := maxIterations; budget > 0 && len(stack) > 0; budget-- {
-		top := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		switch u := top.Underlying().(type) {
+		var top types.Type
+		switch top, stack = stack[len(stack)-1], stack[:len(stack)-1]; u := top.Underlying().(type) {
 		case *types.Array:
 			// An array is zero-sized if its length is 0 or its element type is zero-sized.
 			if u.Len() > 0 {
@@ -46,8 +44,8 @@ func IsZeroSized(t types.Type) bool {
 
 		case *types.Struct:
 			// A struct is zero-sized if all its fields are zero-sized.
-			for i := range u.NumFields() {
-				stack = append(stack, u.Field(i).Type())
+			for field := range u.Fields() {
+				stack = append(stack, field.Type())
 			}
 
 		default:

@@ -7,31 +7,11 @@
 [![Go Report Card](https://goreportcard.com/badge/fillmore-labs.com/cmplint)](https://goreportcard.com/report/fillmore-labs.com/cmplint)
 [![License](https://img.shields.io/github/license/fillmore-labs/cmplint)](https://www.apache.org/licenses/LICENSE-2.0)
 
-`cmplint` is a Go linter (static analysis tool) that detects comparisons against the address of newly created values,
-such as `ptr == &MyStruct{}` or `ptr == new(MyStruct)`. These comparisons are almost always incorrect, as each
-expression creates a unique allocation at runtime, usually yielding false or undefined results.
+`cmplint` is a Go linter that detects comparisons like `ptr == &MyStruct{}` — code that is almost always incorrect. Each
+composite literal or `new()` call allocates a unique address, so these comparisons typically evaluate to `false` or have
+undefined behavior when zero-sized types are involved.
 
-## ⚠️ Deprecation Notice: The Linter Has Moved
-
-The functionality of `cmplint` has been integrated into the [`errortype`](https://github.com/fillmore-labs/errortype)
-linter and will be further developed there.
-
-Most of the issues `cmplint` found were related to `errors.Is` comparisons, which created a natural overlap with
-`errortype`.
-
-The rest of this README is kept for historical purposes.
-
-## Quickstart
-
-### Installation
-
-Install the linter:
-
-### Homebrew
-
-```console
-brew install fillmore-labs/tap/cmplint
-```
+## Installation
 
 ### Go
 
@@ -39,9 +19,15 @@ brew install fillmore-labs/tap/cmplint
 go install fillmore-labs.com/cmplint@latest
 ```
 
+### Homebrew
+
+```console
+brew install fillmore-labs/tap/cmplint
+```
+
 ### Eget
 
-[Install `eget`](https://github.com/zyedidia/eget?tab=readme-ov-file#how-to-get-eget), then
+[Eget](https://github.com/zyedidia/eget) downloads prebuilt binaries. After installing it:
 
 ```console
 eget fillmore-labs/cmplint
@@ -49,15 +35,13 @@ eget fillmore-labs/cmplint
 
 ## Usage
 
-Run the linter on your project:
-
 ```console
 cmplint ./...
 ```
 
 ## The Problem
 
-Comparing pointers to newly allocated values is a source of subtle bugs in Go. Consider this code:
+Comparing pointers to newly allocated values is a source of subtle bugs in Go. Consider:
 
 ```go
 import (
@@ -72,29 +56,13 @@ import (
   }
 ```
 
-According to the [Go language specification](https://go.dev/ref/spec#Variables), taking the address of a composite
-literal (`&metav1.Duration{}`) or calling `new()` creates a new allocation:
+The reason: every `&T{}` or `new(T)` expression creates a fresh allocation with a
+[unique address](https://go.dev/ref/spec#Composite_literals). So `ptr == &MyStruct{}` is almost always `false`,
+regardless of what `ptr` points to.
 
-> _“Calling the built-in function `new` or taking the address of a composite literal allocates storage for a variable at
-> run time.”_
+For zero-sized types, the behavior is [undefined](https://go.dev/ref/spec#Address_operators):
 
-Each allocation gets a [unique address](https://go.dev/ref/spec#Composite_literals):
-
-> _“Taking the address of a composite literal generates a pointer to a **unique variable** initialized with the
-> literal's value.”_
-
-This means `ptr == &MyStruct{}` will almost always evaluate to `false`, regardless of what `ptr` points to. The only
-exception is zero-sized types, where [the behavior is undefined](https://go.dev/ref/spec#Address_operators):
-
-> _“Pointers to distinct zero-size variables may or may not be equal.”_
-
-### What Developers Usually Intended
-
-When developers write comparisons like `ptr == &MyStruct{}`, they often intend to:
-
-- Compare the _values_
-- Check for a specific sentinel instance
-- Use type checking
+> _"Pointers to distinct zero-size variables may or may not be equal."_
 
 ### Examples of Problematic Code
 
@@ -112,12 +80,12 @@ import (
 func validateUpdateStrategy(spec *v1alpha1.CatalogSourceSpec) {
   expectedTime := 30 * time.Second
 
-  // ❌ This comparison will always be false - &metav1.Duration{} creates a unique address.
+  // This comparison will always be false - &metav1.Duration{} creates a unique address.
   if (spec.UpdateStrategy.Interval != &metav1.Duration{Duration: expectedTime}) {
     // ...
   }
 
-  // ✅ Correct approach: Dereference the pointer and compare values (after a nil check).
+  // Correct approach: Dereference the pointer and compare values (after a nil check).
   if spec.UpdateStrategy.Interval == nil || spec.UpdateStrategy.Interval.Duration != expectedTime {
     // ...
   }
@@ -129,12 +97,12 @@ func validateUpdateStrategy(spec *v1alpha1.CatalogSourceSpec) {
 ```go
 func connectToDatabase() {
   db, err := dbConnect()
-  // ❌ This will always be false - &url.Error{} creates a unique address.
+  // This will always be false - &url.Error{} creates a unique address.
   if errors.Is(err, &url.Error{}) {
     log.Fatal("Cannot connect to DB")
   }
 
-  // ✅ Correct approach:
+  // Correct approach:
   var urlErr *url.Error
   if errors.As(err, &urlErr) {
     log.Fatal("Error connecting to DB:", urlErr)
@@ -145,12 +113,12 @@ func connectToDatabase() {
 func unmarshalEvent(msg []byte) {
   var es []cloudevents.Event
   err := json.Unmarshal(msg, &es)
-  // ❌ This comparison will always be false:
+  // This comparison will always be false:
   if errors.Is(err, &json.UnmarshalTypeError{}) {
     //...
   }
 
-  // ✅ Correct approach:
+  // Correct approach:
   var typeErr *json.UnmarshalTypeError
   if errors.As(err, &typeErr) {
     //...
@@ -162,8 +130,8 @@ func unmarshalEvent(msg []byte) {
 
 ### `errors.Is` and Similar Functions
 
-`cmplint` includes special handling for [`errors.Is`](https://pkg.go.dev/errors#Is) and similar functions to reduce
-false positives. The linter suppresses diagnostics when:
+`cmplint` suppresses diagnostics when error types implement `Unwrap` or `Is` methods, since these enable legitimate use
+with [`errors.Is`](https://pkg.go.dev/errors#Is). Specifically, diagnostics are suppressed when:
 
 - **The error type has an `Unwrap() error` method**, as `errors.Is` traverses the error tree.
 
@@ -241,12 +209,12 @@ func (e *errorB) Is(err error) bool {
     return &errorB{100}
   }()
 
-  // ❌ This valid code gets flagged:
+  // This valid code gets flagged:
   if errors.Is(err, &errorA{100}) { // Flagged, but technically correct.
     // ...
   }
 
-  // ✅ Document to clarify intent and assign to an identifier to suppress the warning:
+  // Document to clarify intent and assign to an identifier to suppress the warning:
   target := &errorA{100} // errorB's "Is" method should match.
   if errors.Is(err, target) {
     // ...
@@ -260,7 +228,6 @@ func (e *errorB) Is(err error) bool {
 - **“Result of comparison with address of new variable of type "..." is always false”**
 
   This indicates a comparison like `ptr == &MyStruct{}` that will never be true. Consider these fixes:
-
   - _Compare values instead:_
 
     ```go
@@ -302,7 +269,7 @@ func (e *errorB) Is(err error) bool {
   func (e *Skip) Error() string { return "host hook execution skipped." }
 
   func (r renderRunner) RunHostHook(ctx context.Context, hook *hostHook) {
-    if err := hook.run(ctx /*, ... */); errors.Is(err, &Skip{}) { // ❌ Undefined behavior.
+    if err := hook.run(ctx /*, ... */); errors.Is(err, &Skip{}) { // Undefined behavior.
       // ...
     }
   }
@@ -315,7 +282,7 @@ func (e *errorB) Is(err error) bool {
         err := recover()
 
         if err, ok := err.(error); ok &&
-          errors.Is(err, &runtime.PanicNilError{}) { // ❌ Undefined behavior.
+          errors.Is(err, &runtime.PanicNilError{}) { // Undefined behavior.
           log.Print("panic called with nil argument")
         }
       }()
@@ -323,7 +290,7 @@ func (e *errorB) Is(err error) bool {
       panic(nil)
   ```
 
-  While this might work due to Go runtime optimizations, it's logic is unsound. Use `errors.As` instead:
+  While this might work due to Go runtime optimizations, its logic is unsound. Use `errors.As` instead:
 
   ```go
     var panicErr *runtime.PanicNilError
@@ -332,10 +299,35 @@ func (e *errorB) Is(err error) bool {
     }
   ```
 
-  For more details, see the blog post
-  [_"Equality of Pointers to Zero-Sized Types"_](https://blog.fillmore-labs.com/posts/zerosized-1/).
-
 ## Integration
+
+### `go vet`
+
+```shell
+go vet -vettool=$(which cmplint) ./...
+```
+
+### `errortype`
+
+[`errortype`](https://github.com/fillmore-labs/errortype) is a comprehensive error handling linter that includes
+`cmplint`'s checks. If you're already using `errortype`, you don't need `cmplint` separately — though running `cmplint`
+alone might be faster on large codebases.
+
+### `golangci-lint` Module Plugin
+
+Add a `.custom-gcl.yaml` file to your project root:
+
+```yaml
+---
+version: v2.8.0
+plugins:
+  - module: fillmore-labs.com/cmplint
+    import: fillmore-labs.com/cmplint/gclplugin
+    version: v0.0.6
+```
+
+See also the `golangci-lint`
+[module plugin system](https://golangci-lint.run/docs/plugins/module-plugins/#the-automatic-way) documentation.
 
 ### CI/CD Integration
 
@@ -347,13 +339,17 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version: 1.24
+          go-version: 1.25
       - name: Run cmplint
         run: go run fillmore-labs.com/cmplint@latest ./...
 ```
+
+## Links
+
+- [Equality of Pointers to Zero-Sized Types](https://blog.fillmore-labs.com/posts/zerosized-1/).
 
 ## License
 

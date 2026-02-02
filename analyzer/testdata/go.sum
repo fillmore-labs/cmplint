@@ -8,8 +8,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-golang.org/x/exp/errors v0.0.0-20250819193227-8b4c13bb791b h1:aPUSN1cbl3D2sqp0y4XQT+A7vSkK2FXo6hRqF8owk7E=
-golang.org/x/exp/errors v0.0.0-20250819193227-8b4c13bb791b/go.mod h1:SHEQGVzL1wbg3BP2sSM8c97cyE/r0w/tAx1sK3D3CBE=
+golang.org/x/exp/errors v0.0.0-20260112195511-716be5621a96 h1:6LWCcLFKHVXbudn83AiKXNDh4Roerw0M8GiQ6tk9HVQ=
+golang.org/x/exp/errors v0.0.0-20260112195511-716be5621a96/go.mod h1:SHEQGVzL1wbg3BP2sSM8c97cyE/r0w/tAx1sK3D3CBE=
 golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da h1:noIWHXmPHxILtqtCOPIhSt0ABwskkZKjD3bXGnZGpNY=
 golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da/go.mod h1:NDW/Ps6MPRej6fsCIbMTohpP40sJ/P/vI1MoTEGwX90=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=

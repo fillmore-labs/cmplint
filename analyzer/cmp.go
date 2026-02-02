@@ -67,9 +67,7 @@ func (p pass) comparison(n ast.Node, left, right ast.Expr, isError bool) {
 		typeName = types.TypeString(t, types.RelativeTo(p.Pkg))
 	}
 
-	otherStr := p.exprToString(other)
-
-	if isUndefined {
+	if otherStr := p.exprToString(other); isUndefined {
 		p.ReportRangef(n,
 			"Result of comparison of %q with address of new zero-sized variable of type %q is false or undefined",
 			otherStr, typeName)
@@ -115,13 +113,11 @@ func (p pass) isAddrOfCompLitOrNew(x ast.Expr) (typ types.Type, ok bool) {
 			return nil, false // some function
 		}
 
-		funType := p.TypesInfo.Types[e.Fun]
-		if !funType.IsBuiltin() {
+		if funType := p.TypesInfo.Types[e.Fun]; !funType.IsBuiltin() {
 			return nil, false // no built-in
 		}
 
-		fun, ok := ast.Unparen(e.Fun).(*ast.Ident)
-		if !ok || fun.Name != "new" {
+		if fun, ok := ast.Unparen(e.Fun).(*ast.Ident); !ok || fun.Name != "new" {
 			return nil, false // not new(...)
 		}
 

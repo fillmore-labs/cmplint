@@ -40,14 +40,14 @@ func TestAnalyzer(t *testing.T) {
 		{
 			name:    "default",
 			options: nil,
-			pkg:     "go.test/a",
+			pkg:     "./a",
 		},
 		{
 			name: "check-is=false",
 			options: Options{
 				WithCheckIs(false),
 			},
-			pkg: "go.test/b",
+			pkg: "./b",
 		},
 		{
 			name: "check-is=false via flags",
@@ -58,7 +58,7 @@ func TestAnalyzer(t *testing.T) {
 			flags: map[string]string{
 				"check-is": "false",
 			},
-			pkg: "go.test/b",
+			pkg: "./b",
 		},
 	}
 

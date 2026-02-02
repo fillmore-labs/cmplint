@@ -34,9 +34,6 @@ type FuncName struct {
 
 	// Name is the function or method name ("Decode").
 	Name string
-
-	// Ptr is true if the receiver is a pointer type.
-	Ptr bool
 }
 
 // String returns the fully qualified function name as a string.
@@ -56,10 +53,6 @@ func (f FuncName) String() string {
 	var sb strings.Builder
 
 	sb.WriteByte('(')
-
-	if f.Ptr {
-		sb.WriteByte('*')
-	}
 
 	if f.Path != "" {
 		sb.WriteString(f.Path)
@@ -96,7 +89,6 @@ func NewFuncName(fun *types.Func) FuncName {
 
 	// If it's a pointer, set the ptr flag and unwrap to the element type.
 	if p, ok := rtyp.(*types.Pointer); ok {
-		f.Ptr = true
 		rtyp = types.Unalias(p.Elem())
 	}
 
