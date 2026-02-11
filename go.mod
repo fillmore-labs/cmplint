@@ -2,7 +2,7 @@ module fillmore-labs.com/cmplint
 
 go 1.25
 
-toolchain go1.26.0
+toolchain go1.26.1
 
 require (
 	github.com/golangci/plugin-module-register v0.1.2

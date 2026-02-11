@@ -30,7 +30,7 @@ Package gclplugin provides golangci-lint plugin integration for the [cmplint] an
 	plugins:
 	  - module: fillmore-labs.com/cmplint
 	    import: fillmore-labs.com/cmplint/gclplugin
-	    version: v0.0.7
+	    version: v0.0.8
 
 2. Run `golangci-lint custom` from your project root.
 
