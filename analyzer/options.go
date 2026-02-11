@@ -17,62 +17,25 @@
 //nolint:ireturn
 package analyzer
 
-import "flag"
+import (
+	"log/slog"
 
-// options holds the configurable parameters for the analyzer.
-type options struct {
-	name    string
-	doc     string
-	checkis bool
-}
-
-// defaultOptions returns a [options] struct initialized with default values.
-func defaultOptions() *options {
-	return &options{ // Defaults
-		name:    Name,
-		doc:     Doc,
-		checkis: true,
-	}
-}
-
-// makeOptions returns a [options] struct with overriding [Option]s applied.
-func makeOptions(opts Options) *options {
-	o := defaultOptions()
-	opts.apply(o)
-
-	return o
-}
-
-// flags returns a [flag.FlagSet] containing command-line flags that can
-// configure the analyzer's behavior. These flags correspond to the fields
-// in the [options] struct.
-// The returned FlagSet is used by the analysis driver to parse command-line
-// arguments for the analyzer.
-func (o *options) flags() flag.FlagSet {
-	var fs flag.FlagSet
-
-	fs.Init(o.name, flag.ContinueOnError)
-
-	fs.BoolVar(&o.checkis, "check-is", o.checkis,
-		`suppress diagnostic on errors.Is if the compared type has an "Is(error) bool" method`)
-
-	return fs
-}
+	"fillmore-labs.com/cmplint/internal/options"
+)
 
 // Option configures specific behavior of the [analysis.Analyzer].
 type Option interface {
-	apply(opts *options)
+	Apply(opts *option)
+	LogAttr() slog.Attr
 }
 
-// Options is a slice of [Option] values. It also implements the [Option] interface,
-// allowing multiple options to be applied sequentially as a single Option.
-type Options []Option
-
-// apply applies each Option in the Options slice to the given [options] struct.
-func (o Options) apply(opts *options) {
-	for _, opt := range o {
-		opt.apply(opts)
-	}
+// Join creates a new Option joining the provided Option values.
+//
+// The result implements [slog.LogValuer], so the following is evaluated lazily:
+//
+//	slog.LogAttrs(ctx, slog.LevelInfo, "settings", Join(opts...).LogAttr())
+func Join(opts ...Option) Option {
+	return options.Join(opts)
 }
 
 // WithName returns an [Option] that sets a custom name for the analyzer.
@@ -86,9 +49,13 @@ type nameOption struct {
 	name string
 }
 
-// apply sets the name field in the provided [options] struct.
-func (o nameOption) apply(opts *options) {
+// Apply sets the name field in the provided [options] struct.
+func (o nameOption) Apply(opts *option) {
 	opts.name = o.name
+}
+
+func (o nameOption) LogAttr() slog.Attr {
+	return slog.String("name", o.name)
 }
 
 // WithDoc returns an [Option] that sets custom documentation for the analyzer.
@@ -102,9 +69,13 @@ type docOption struct {
 	doc string
 }
 
-// apply sets the doc field in the provided [options] struct.
-func (o docOption) apply(opts *options) {
+// Apply sets the doc field in the provided [options] struct.
+func (o docOption) Apply(opts *option) {
 	opts.doc = o.doc
+}
+
+func (o docOption) LogAttr() slog.Attr {
+	return slog.String("doc", o.doc)
 }
 
 // WithCheckIs returns an [Option] that configures the diagnostic suppression behavior
@@ -121,7 +92,12 @@ type checkisOption struct {
 	checkis bool
 }
 
-// apply sets the checkis field in the provided [options] struct.
-func (o checkisOption) apply(opts *options) {
+// Apply sets the checkis field in the provided [options] struct.
+func (o checkisOption) Apply(opts *option) {
 	opts.checkis = o.checkis
+}
+
+// LogAttr implements [Option].
+func (o checkisOption) LogAttr() slog.Attr {
+	return slog.Bool("check-is", o.checkis)
 }

@@ -33,7 +33,7 @@ func TestAnalyzer(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		options Options
+		options Option
 		flags   map[string]string
 		pkg     string
 	}{
@@ -43,18 +43,16 @@ func TestAnalyzer(t *testing.T) {
 			pkg:     "./a",
 		},
 		{
-			name: "check-is=false",
-			options: Options{
-				WithCheckIs(false),
-			},
-			pkg: "./b",
+			name:    "check-is=false",
+			options: WithCheckIs(false),
+			pkg:     "./b",
 		},
 		{
 			name: "check-is=false via flags",
-			options: Options{
+			options: Join(
 				WithName("ptrequality"),
 				WithDoc("Documentation"),
-			},
+			),
 			flags: map[string]string{
 				"check-is": "false",
 			},

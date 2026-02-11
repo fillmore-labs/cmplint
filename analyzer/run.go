@@ -25,8 +25,15 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+// option holds the configurable parameters for the analyzer.
+type option struct {
+	name    string
+	doc     string
+	checkis bool
+}
+
 // run is the main analysis function for the analyzer.
-func (o *options) run(a *analysis.Pass) (any, error) {
+func (o *option) run(a *analysis.Pass) (any, error) {
 	in, ok := a.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !ok {
 		return nil, ErrNoInspector

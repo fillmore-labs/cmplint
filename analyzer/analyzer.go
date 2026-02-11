@@ -17,6 +17,8 @@
 package analyzer
 
 import (
+	"flag"
+
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 )
@@ -53,7 +55,8 @@ var Analyzer = New() //nolint:gochecknoglobals
 // It accepts a variadic number of [Option] arguments to customize its behavior,
 // such as its name, documentation, or specific checking rules.
 func New(opts ...Option) *analysis.Analyzer {
-	o := makeOptions(opts)
+	o := defaultOptions()
+	Join(opts...).Apply(o)
 
 	return &analysis.Analyzer{
 		Name: o.name,
@@ -65,4 +68,29 @@ func New(opts ...Option) *analysis.Analyzer {
 
 		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
+}
+
+// defaultOptions returns a [options] struct initialized with default values.
+func defaultOptions() *option {
+	return &option{ // Defaults
+		name:    Name,
+		doc:     Doc,
+		checkis: true,
+	}
+}
+
+// flags returns a [flag.FlagSet] containing command-line flags that can
+// configure the analyzer's behavior. These flags correspond to the fields
+// in the [options] struct.
+// The returned FlagSet is used by the analysis driver to parse command-line
+// arguments for the analyzer.
+func (o *option) flags() flag.FlagSet {
+	var fs flag.FlagSet
+
+	fs.Init(o.name, flag.ContinueOnError)
+
+	fs.BoolVar(&o.checkis, "check-is", o.checkis,
+		`suppress diagnostic on errors.Is if the compared type has an "Is(error) bool" method`)
+
+	return fs
 }

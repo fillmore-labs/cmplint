@@ -51,7 +51,6 @@ func (f FuncName) String() string {
 
 	// A method.
 	var sb strings.Builder
-
 	sb.WriteByte('(')
 
 	if f.Path != "" {
@@ -85,14 +84,18 @@ func NewFuncName(fun *types.Func) FuncName {
 		return f
 	}
 
-	rtyp := types.Unalias(recv.Type()) // It's a method with a receiver.
+	rtyp := recv.Type() // It's a method.
 
-	// If it's a pointer, set the ptr flag and unwrap to the element type.
-	if p, ok := rtyp.(*types.Pointer); ok {
-		rtyp = types.Unalias(p.Elem())
-	}
-
+recvloop:
 	switch t := rtyp.(type) {
+	case *types.Alias:
+		rtyp = t.Rhs() // Unwrap alias.
+		goto recvloop
+
+	case *types.Pointer:
+		rtyp = t.Elem() // If it's a pointer, unwrap to the element type.
+		goto recvloop
+
 	case *types.Named:
 		tn := t.Obj()
 		if pkg := tn.Pkg(); pkg != nil {
@@ -100,7 +103,7 @@ func NewFuncName(fun *types.Func) FuncName {
 		}
 		f.Receiver = tn.Name()
 
-	case *types.Interface: // This case handles methods on an interface type.
+	case *types.Interface: // Method on an interface type.
 		f.Receiver = "interface"
 
 	default: // Anonymous types shouldn't have methods.
