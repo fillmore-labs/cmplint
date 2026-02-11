@@ -1,9 +1,9 @@
 # cmplint
 
 [![Go Reference](https://pkg.go.dev/badge/fillmore-labs.com/cmplint.svg)](https://pkg.go.dev/fillmore-labs.com/cmplint)
-[![Test](https://github.com/fillmore-labs/cmplint/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/fillmore-labs/cmplint/actions/workflows/test.yml)
-[![CodeQL](https://github.com/fillmore-labs/cmplint/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/fillmore-labs/cmplint/actions/workflows/github-code-scanning/codeql)
-[![Coverage](https://codecov.io/gh/fillmore-labs/cmplint/branch/main/graph/badge.svg?token=J5SNKW3NJ0)](https://codecov.io/gh/fillmore-labs/cmplint)
+[![Test](https://github.com/fillmore-labs/cmplint/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/fillmore-labs/cmplint/actions/workflows/test.yml)
+[![CodeQL](https://github.com/fillmore-labs/cmplint/actions/workflows/github-code-scanning/codeql/badge.svg?branch=dev)](https://github.com/fillmore-labs/cmplint/actions/workflows/github-code-scanning/codeql)
+[![Coverage](https://codecov.io/gh/fillmore-labs/cmplint/branch/dev/graph/badge.svg?token=J5SNKW3NJ0)](https://codecov.io/gh/fillmore-labs/cmplint)
 [![Go Report Card](https://goreportcard.com/badge/fillmore-labs.com/cmplint)](https://goreportcard.com/report/fillmore-labs.com/cmplint)
 [![License](https://img.shields.io/github/license/fillmore-labs/cmplint)](https://www.apache.org/licenses/LICENSE-2.0)
 
@@ -319,7 +319,7 @@ Add a `.custom-gcl.yaml` file to your project root:
 
 ```yaml
 ---
-version: v2.8.0
+version: v2.9.0
 plugins:
   - module: fillmore-labs.com/cmplint
     import: fillmore-labs.com/cmplint/gclplugin

@@ -22,7 +22,7 @@ Package gclplugin provides golangci-lint plugin integration for the [cmplint] an
 1. Add a file `.custom-gcl.yaml` to your source with:
 
 	---
-	version: v2.8.0
+	version: v2.9.0
 
 	name: golangci-lint
 	destination: .

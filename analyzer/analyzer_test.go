@@ -18,6 +18,8 @@ package analyzer_test
 
 import (
 	"errors"
+	"go/version"
+	"runtime"
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
@@ -28,6 +30,11 @@ import (
 
 func TestAnalyzer(t *testing.T) {
 	t.Parallel()
+
+	const minVersion = "go1.25.0"
+	if version.Compare(runtime.Version(), minVersion) < 0 {
+		t.Skipf("needs minimal version %s", minVersion)
+	}
 
 	dir := analysistest.TestData()
 
